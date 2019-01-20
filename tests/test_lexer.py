@@ -8,27 +8,35 @@ from pycc import tokenize
 
 class TestLexer(unittest.TestCase):
 
-    def testParseInt(self):
+    def testLexInt(self):
         t = tokenize('int')[0]
         assert(t == ('keyword_int', 'int'))
 
-    def testParseReturn(self):
+    def testLexReturn(self):
         t = tokenize('return 2;')[0]
         assert(t == ('keyword_return', 'return'))
 
-    def testParseDouble(self):
+    def testLexDouble(self):
         t = tokenize('return 1.234;')[1]
         assert(t == ('double', '1.234'))
 
-    def testParseOpenBrace(self):
+    def testLexOpenBrace(self):
         t = tokenize('{return 1;}')[0]
         assert(t == ('open_brace', '{'))
 
-    def testParseCloseBrace(self):
+    def testLexCloseBrace(self):
         t = tokenize('{return 1;}')[4]
         assert(t == ('close_brace', '}'))
 
-    def testParseSimpleMain(self):
+    def testLexAssign(self):
+        t = tokenize('a=1')[1]
+        assert(t == ('assignment', '='))
+
+    def testLexEquality(self):
+        t = tokenize('a==1')[1]
+        assert(t == ('equality', '=='))
+
+    def testLexSimpleMain(self):
         t = tokenize('int main() {return 2;}')
         expected = [
             ('keyword_int', 'int'),
@@ -43,7 +51,7 @@ class TestLexer(unittest.TestCase):
         ]
         self.assertEqual(t, expected)
 
-    def testParseSimpleMainWithLF(self):
+    def testLexSimpleMainWithLF(self):
         t = tokenize('int main() {\n  return 2;\n}')
         expected = [
             ('keyword_int', 'int'),
