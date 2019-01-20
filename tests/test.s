@@ -1,0 +1,1 @@
+[('keyword_int', 'int'), ('identifier', 'main'), ('open_paren', '('), ('close_paren', ')'), ('open_brace', '{'), ('keyword_return', 'return'), ('integer', '2'), ('semicolon', ';'), ('close_brace', '}')]
