@@ -4,67 +4,99 @@ import unittest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
-from pycc import tokenize
+from pycc import (
+    TokenKeyword,
+    TokenOpenBrace,
+    TokenCloseBrace,
+    TokenOpenParen,
+    TokenCloseParen,
+    TokenSemicolon,
+    TokenAssignmentOperator,
+    TokenArithmeticOperator,
+    TokenRelationalOperator,
+    TokenLogicalOperator,
+    TokenIdentifier,
+    TokenInteger,
+    TokenDouble,
+    TokenString,
+    lex,
+)
 
 class TestLexer(unittest.TestCase):
 
-    def testLexInt(self):
-        t = tokenize('int')[0]
-        assert(t == ('keyword_int', 'int'))
-
-    def testLexReturn(self):
-        t = tokenize('return 2;')[0]
-        assert(t == ('keyword_return', 'return'))
+    def testLexKeyword(self):
+        t = lex('int')[0]
+        self.assertIsInstance(t, TokenKeyword)
+        self.assertEqual(t.value, 'int')
 
     def testLexDouble(self):
-        t = tokenize('return 1.234;')[1]
-        assert(t == ('double', '1.234'))
+        t = lex('return 1.234;')[1]
+        self.assertIsInstance(t, TokenDouble)
+        self.assertEqual(t.value, 1.234)
+
+    def testLexInteger(self):
+        t = lex('return 2;')[1]
+        self.assertIsInstance(t, TokenInteger)
+        self.assertEqual(t.value, 2)
 
     def testLexOpenBrace(self):
-        t = tokenize('{return 1;}')[0]
-        assert(t == ('open_brace', '{'))
+        t = lex('{return 1;}')[0]
+        self.assertIsInstance(t, TokenOpenBrace)
 
     def testLexCloseBrace(self):
-        t = tokenize('{return 1;}')[4]
-        assert(t == ('close_brace', '}'))
+        t = lex('{return 1;}')[4]
+        self.assertIsInstance(t, TokenCloseBrace)
 
     def testLexAssign(self):
-        t = tokenize('a=1')[1]
-        assert(t == ('assignment', '='))
+        t = lex('a=1')[1]
+        self.assertIsInstance(t, TokenAssignmentOperator)
 
     def testLexEquality(self):
-        t = tokenize('a==1')[1]
-        assert(t == ('equality', '=='))
+        t = lex('a==1')[1]
+        self.assertIsInstance(t, TokenRelationalOperator)
+        self.assertEqual(t.value, '==')
 
     def testLexSimpleMain(self):
-        t = tokenize('int main() {return 2;}')
+        t = lex('int main() { int a=2; return a;}')
         expected = [
-            ('keyword_int', 'int'),
-            ('identifier', 'main'),
-            ('open_paren', '('),
-            ('close_paren', ')'),
-            ('open_brace', '{'),
-            ('keyword_return', 'return'),
-            ('integer', '2'),
-            ('semicolon', ';'),
-            ('close_brace', '}')
+            'TokenKeyword int',
+            'TokenIdentifier main',
+            'TokenOpenParen (',
+            'TokenCloseParen )',
+            'TokenOpenBrace {',
+            'TokenKeyword int',
+            'TokenIdentifier a',
+            'TokenAssignmentOperator =',
+            'TokenInteger 2',
+            'TokenSemicolon ;',
+            'TokenKeyword return',
+            'TokenIdentifier a',
+            'TokenSemicolon ;',
+            'TokenCloseBrace }',
         ]
-        self.assertEqual(t, expected)
+        tks = [str(tk) for tk in t]
+        self.assertEqual(tks, expected)
 
     def testLexSimpleMainWithLF(self):
-        t = tokenize('int main() {\n  return 2;\n}')
+        t = lex('int main() {\n  int a=2;\n  return a;\n}')
         expected = [
-            ('keyword_int', 'int'),
-            ('identifier', 'main'),
-            ('open_paren', '('),
-            ('close_paren', ')'),
-            ('open_brace', '{'),
-            ('keyword_return', 'return'),
-            ('integer', '2'),
-            ('semicolon', ';'),
-            ('close_brace', '}')
+            'TokenKeyword int',
+            'TokenIdentifier main',
+            'TokenOpenParen (',
+            'TokenCloseParen )',
+            'TokenOpenBrace {',
+            'TokenKeyword int',
+            'TokenIdentifier a',
+            'TokenAssignmentOperator =',
+            'TokenInteger 2',
+            'TokenSemicolon ;',
+            'TokenKeyword return',
+            'TokenIdentifier a',
+            'TokenSemicolon ;',
+            'TokenCloseBrace }',
         ]
-        self.assertEqual(t, expected)
+        tks = [str(tk) for tk in t]
+        self.assertEqual(tks, expected)
 
 if __name__ == '__main__':
     unittest.main()
