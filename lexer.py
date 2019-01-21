@@ -3,9 +3,12 @@ import sys
 import re
 
 class Token():
-    def __init__(self, pattern):
+    def __init__(self, pattern, value=None):
         self.pattern = re.compile(pattern)
-        self.value = None
+        if value:
+            self.lex(str(value))
+        else:
+            value = None
 
     def lex(self, string):
         matched = self.pattern.match(string)
@@ -13,62 +16,69 @@ class Token():
             self.value = matched.group()
             self.start = matched.start()
             self.end = matched.end()
+        else:
+            self.value = None
+            self.start = None
+            self.end = None
 
     def __str__(self):
         return "{0} {1}".format(self.__class__.__name__, self.value)
 
 class TokenKeyword(Token):
-    def __init__(self):
-        super().__init__((
+    def __init__(self, value=None):
+        super().__init__(
+            (
             "auto|break|case|char|const|continue|default|do|"
             "double|else|enum|extern|float|for|goto|if|int|"
             "long|register|return|short|signed|sizeof|static|"
             "struct|switch|typedef|union|unsigned|void|volatile|while"
-        ))
+            ),
+            value
+        )
 
 class TokenOpenBrace(Token):
-    def __init__(self):
-        super().__init__('{')
+    def __init__(self, value=None):
+        super().__init__('{', value)
 
 class TokenCloseBrace(Token):
-    def __init__(self):
-        super().__init__('}')
+    def __init__(self, value=None):
+        super().__init__('}', value)
 
 class TokenOpenParen(Token):
-    def __init__(self):
-        super().__init__('\(')
+    def __init__(self, value=None):
+        super().__init__('\(', value)
 
 class TokenCloseParen(Token):
-    def __init__(self):
-        super().__init__('\)')
+    def __init__(self, value=None):
+        super().__init__('\)', value)
 
 class TokenSemicolon(Token):
-    def __init__(self):
-        super().__init__(';')
+    def __init__(self, value=None):
+        super().__init__(';', value)
 
 class TokenAssignmentOperator(Token):
-    def __init__(self):
-        super().__init__('[<]{2}=|[>]{2}=|[\+\-\*\/%\&\^\!\|]?[=](?!=)')
+    def __init__(self, value=None):
+        super().__init__('[<]{2}=|[>]{2}=|[\+\-\*\/%\&\^\!\|]?[=](?!=)', value)
 
 class TokenArithmeticOperator(Token):
-    def __init__(self):
-        super().__init__('[+]{2}|[-]{2}|[\+\-\*\/%]')
+    def __init__(self, value=None):
+        super().__init__('[+]{2}|[-]{2}|[\+\-\*\/%]', value)
 
 class TokenRelationalOperator(Token):
-    def __init__(self):
-        super().__init__('[=\!\>\<][=]|[<>]')
+    def __init__(self, value=None):
+        super().__init__('[=\!\>\<][=]|[<>]', value)
 
 class TokenLogicalOperator(Token):
-    def __init__(self):
-        super().__init__('&{2}|\|{2}|\!(?!=)')
+    def __init__(self, value=None):
+        super().__init__('&{2}|\|{2}|\!(?!=)', value)
 
 class TokenIdentifier(Token):
-    def __init__(self):
-        super().__init__('[a-zA-Z_][a-zA-Z0-9_]*')
+    def __init__(self, value=None):
+        super().__init__('[a-zA-Z_][a-zA-Z0-9_]*', value)
 
 class TokenInteger(Token):
-    def __init__(self):
-        super().__init__('[0-9]+(?!\.)')
+    def __init__(self, value=None):
+        super().__init__('[0-9]+(?!\.)', value)
 
     def lex(self, string):
         super().lex(string)
@@ -76,8 +86,8 @@ class TokenInteger(Token):
             self.value = int(self.value)
 
 class TokenDouble(Token):
-    def __init__(self):
-        super().__init__('[0-9]*\.?[0-9]+')
+    def __init__(self, value=None):
+        super().__init__('[0-9]*\.?[0-9]+', value)
 
     def lex(self, string):
         super().lex(string)
@@ -85,8 +95,8 @@ class TokenDouble(Token):
             self.value = float(self.value)
 
 class TokenString(Token):
-    def __init__(self):
-        super().__init__('"\w+"')
+    def __init__(self, value=None):
+        super().__init__('"\w+"', value)
 
 def lex(input_string):
     token_types = (

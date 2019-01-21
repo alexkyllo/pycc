@@ -1,6 +1,19 @@
-import lexer
-# Parser
-# AST node classes
+from lexer import (
+    TokenKeyword,
+    TokenOpenBrace,
+    TokenCloseBrace,
+    TokenOpenParen,
+    TokenCloseParen,
+    TokenSemicolon,
+    TokenAssignmentOperator,
+    TokenArithmeticOperator,
+    TokenRelationalOperator,
+    TokenLogicalOperator,
+    TokenIdentifier,
+    TokenInteger,
+    TokenDouble,
+    TokenString,
+)
 
 class Constant():
     '''A constant value'''
@@ -72,31 +85,44 @@ class Program():
     def __str__(self):
         return "Program {0}".format(str(self.functions))
 
-
 def parse_statement(tokens):
-    is_return = (tokens[0][0] == "keyword_return")
-    is_return_value =  (tokens[1][0] in ("identifier", "integer", "double"))
+    tok_1 = tokens[0]
+    tok_2 = tokens[1]
+    tok_3 = tokens[2]
+    tok_4 = tokens[3]
+    is_return = isinstance(tok_1, TokenKeyword) and tok_1.value == "return"
+    is_return_value = any(isinstance(tok_2, x) for x in (
+            TokenIdentifier,
+            TokenInteger,
+            TokenDouble,
+            TokenString,
+        ))
 
     is_assign = (
-        tokens[0][0] == "identifier"
+        isinstance(tok_1, TokenIdentifier)
     ) and (
-        tokens[1][0] == "assignment"
+        isinstance(tok_2, TokenAssignmentOperator)
     ) and (
-        tokens[2][0] in ("identifier", "integer", "double")
+        any(isinstance(tok_3, x) for x in (
+            TokenIdentifier,
+            TokenInteger,
+            TokenDouble,
+            TokenString,
+        ))
     )
 
     if (is_return and is_return_value):
-        has_semi = (tokens[2][0] == "semicolon")
+        has_semi = isinstance(tok_3, TokenSemicolon)
         if (not has_semi):
             raise Exception("Token ; expected")
         else:
-            return ReturnStatement(value = tokens[1][1])
+            return ReturnStatement(value = tok_2.value)
     elif (is_assign):
-        has_semi = (tokens[3][0] == "semicolon")
+        has_semi = isinstance(tok_4, TokenSemicolon)
         if (not has_semi):
             raise Exception("Token ; expected")
         else:
-            return AssignmentStatement(lhs = tokens[0][1], rhs = tokens[2][1])
+            return AssignmentStatement(lhs = tok_1.value, rhs = tok_3.value)
 
 def parse(tokens):
     return tokens

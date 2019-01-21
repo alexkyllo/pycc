@@ -2,6 +2,23 @@ import sys
 import os
 import unittest
 
+from lexer import (
+    TokenKeyword,
+    TokenOpenBrace,
+    TokenCloseBrace,
+    TokenOpenParen,
+    TokenCloseParen,
+    TokenSemicolon,
+    TokenAssignmentOperator,
+    TokenArithmeticOperator,
+    TokenRelationalOperator,
+    TokenLogicalOperator,
+    TokenIdentifier,
+    TokenInteger,
+    TokenDouble,
+    TokenString,
+)
+
 from parser import (
     Constant,
     Variable,
@@ -18,10 +35,10 @@ from parser import (
 class TestParser(unittest.TestCase):
     def testParseAssignmentStatement(self):
         tokens = [
-            ('identifier', 'a'),
-            ('assignment', '='),
-            ('integer', '1'),
-            ('semicolon', ';')
+            TokenIdentifier('a'),
+            TokenAssignmentOperator('='),
+            TokenInteger('1'),
+            TokenSemicolon(';'),
         ]
 
         stmt = parse_statement(tokens)
