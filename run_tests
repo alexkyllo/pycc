@@ -1,0 +1,4 @@
+echo Test Lexer
+python -m tests.test_lexer
+echo Test Parser
+python -m tests.test_parser

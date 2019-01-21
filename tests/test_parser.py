@@ -2,9 +2,7 @@ import sys
 import os
 import unittest
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
-
-from pycc import (
+from parser import (
     Constant,
     Variable,
     BinaryOp,
