@@ -85,7 +85,7 @@ class TokenInteger(Token):
         if self.value:
             self.value = int(self.value)
 
-class TokenDouble(Token):
+class TokenFloat(Token):
     def __init__(self, value=None):
         super().__init__('[0-9]*\.?[0-9]+', value)
 
@@ -112,7 +112,7 @@ def lex(input_string):
         TokenLogicalOperator,
         TokenIdentifier,
         TokenInteger,
-        TokenDouble,
+        TokenFloat,
         TokenString,
     )
 

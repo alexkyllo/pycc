@@ -15,7 +15,7 @@ from lexer import (
     TokenLogicalOperator,
     TokenIdentifier,
     TokenInteger,
-    TokenDouble,
+    TokenFloat,
     TokenString,
     lex,
 )
@@ -27,9 +27,9 @@ class TestLexer(unittest.TestCase):
         self.assertIsInstance(t, TokenKeyword)
         self.assertEqual(t.value, 'int')
 
-    def testLexDouble(self):
+    def testLexFloat(self):
         t = lex('return 1.234;')[1]
-        self.assertIsInstance(t, TokenDouble)
+        self.assertIsInstance(t, TokenFloat)
         self.assertEqual(t.value, 1.234)
 
     def testLexInteger(self):

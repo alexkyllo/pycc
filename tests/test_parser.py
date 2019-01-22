@@ -15,7 +15,7 @@ from lexer import (
     TokenLogicalOperator,
     TokenIdentifier,
     TokenInteger,
-    TokenDouble,
+    TokenFloat,
     TokenString,
 )
 

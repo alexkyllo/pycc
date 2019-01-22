@@ -11,7 +11,7 @@ from lexer import (
     TokenLogicalOperator,
     TokenIdentifier,
     TokenInteger,
-    TokenDouble,
+    TokenFloat,
     TokenString,
 )
 
@@ -94,7 +94,7 @@ def parse_statement(tokens):
     is_return_value = any(isinstance(tok_2, x) for x in (
             TokenIdentifier,
             TokenInteger,
-            TokenDouble,
+            TokenFloat,
             TokenString,
         ))
 
@@ -106,7 +106,7 @@ def parse_statement(tokens):
         any(isinstance(tok_3, x) for x in (
             TokenIdentifier,
             TokenInteger,
-            TokenDouble,
+            TokenFloat,
             TokenString,
         ))
     )
@@ -123,6 +123,15 @@ def parse_statement(tokens):
             raise Exception("Token ; expected")
         else:
             return AssignmentStatement(lhs = tok_1.value, rhs = tok_3.value)
+
+def parse_expression(tokens):
+
+    if isinstance(tokens[0], TokenIdentifier):
+        return parse_identifier(tokens)
+    elif isinstance(tokens[0], TokenInteger) or isinstance(tokens[0], TokenFloat):
+        return parse_number(tokens)
+    elif isinstance(tokens[0], TokenOpenParen):
+        return parse_paren(tokens)
 
 def parse(tokens):
     return tokens
