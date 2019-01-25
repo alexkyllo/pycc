@@ -21,6 +21,16 @@ class Token():
             self.start = None
             self.end = None
 
+    def get_precedence(self):
+        operator_precedences = {
+            '*': 3,
+            '/': 3,
+            '%': 3,
+            '+': 4,
+            '-': 4,
+        }
+        return operator_precedences.get(self.value, 1)
+
     def __str__(self):
         return "{0} {1}".format(self.__class__.__name__, self.value)
 
