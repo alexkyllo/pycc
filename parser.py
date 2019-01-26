@@ -69,6 +69,8 @@ class AssignmentStatement():
 
     def __str__(self):
         return "(AssignmentStatement {0} {1} {2})".format(self.op, self.lhs, self.rhs)
+    def __repr__(self):
+        return str(self)
 
 class ReturnStatement():
     ''' A return statement'''
@@ -77,6 +79,9 @@ class ReturnStatement():
 
     def __str__(self):
         return "(ReturnStatement {0})".format(self.value)
+
+    def __repr__(self):
+        return str(self)
 
 class Argument():
     ''' A function argument'''
@@ -191,6 +196,8 @@ def parse_expression(tokens):
                                             TokenFloat,
                                             TokenString,)):
         node = Constant(token.value)
+    else:
+        raise Exception("Expected Identifier or Constant.")
     return node
 
 def parse_return(tokens):
@@ -243,32 +250,10 @@ def parse_statement(tokens):
         else:
             current_token = tokens.pop(0)
 
-
     is_identifier = isinstance(next_token, TokenIdentifier)
 
-    # check if next token is an operator or an expression
-    current_token = tokens.pop(0)
-    is_return_value = any(isinstance(current_token, x) for x in (
-            TokenIdentifier,
-            TokenInteger,
-            TokenFloat,
-            TokenString,
-        ))
-
-
-    is_assign = (
-        is_identifier
-    ) and (
-        isinstance(tok_2, TokenAssignmentOperator)
-    ) and (
-        any(isinstance(tok_3, x) for x in (
-            TokenIdentifier,
-            TokenInteger,
-            TokenFloat,
-            TokenString,
-        ))
-    )
-
+    if is_identifier:
+        node = parse_assignment(tokens)
 
     return node
 
@@ -323,6 +308,8 @@ def parse_function(tokens):
             statements.append(parse_statement(tokens))
     else:
         raise Exception("Expected token {")
+
+    return Function(return_type, name, args, statements)
 
 
 def parse(tokens):

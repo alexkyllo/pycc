@@ -87,6 +87,26 @@ class TestParser(unittest.TestCase):
             "(Argument TokenKeyword int (Variable a))"
         )
 
+    def test_parse_function_1(self):
+        tokens = [
+            TokenKeyword('int'),
+            TokenIdentifier('main'),
+            TokenOpenParen('('),
+            TokenCloseParen(')'),
+            TokenOpenBrace('{'),
+            TokenKeyword('return'),
+            TokenInteger('100'),
+            TokenSemicolon(';'),
+            TokenCloseBrace('}'),
+        ]
+
+        func = parse_function(tokens)
+
+        self.assertEqual(
+            str(func),
+            "(Function TokenKeyword int TokenIdentifier main ([]) [(ReturnStatement (Constant 100))])"
+        )
+
     def test_parse_binary_operation_1(self):
         tokens = [
             TokenIdentifier('a'),
