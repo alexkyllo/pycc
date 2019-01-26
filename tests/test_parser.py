@@ -29,6 +29,7 @@ from parser import (
     Argument,
     Function,
     Program,
+    parse_assignment,
     parse_binary_operation_expression,
     parse_constant,
     parse_function,
@@ -47,9 +48,9 @@ class TestParser(unittest.TestCase):
             TokenSemicolon(';'),
         ]
 
-        stmt = parse_statement(tokens)
+        stmt = parse_assignment(tokens)
 
-        self.assertEqual(str(stmt), "(AssignmentStatement a = 1)")
+        self.assertEqual(str(stmt), "(AssignmentStatement TokenAssignmentOperator = TokenIdentifier a TokenInteger 1)")
 
     def test_parse_constant(self):
         tokens = [
@@ -119,7 +120,7 @@ class TestParser(unittest.TestCase):
             TokenIdentifier('a'),
             TokenArithmeticOperator('+'),
             TokenInteger('1'),
-            TokenArithmeticOperationr('+'),
+            TokenArithmeticOperator('+'),
             TokenInteger('2'),
             # a + 1 + 2 => (+ (+ a 1) 2)
         ]

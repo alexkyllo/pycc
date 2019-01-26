@@ -62,12 +62,13 @@ class IfStatement():
 
 class AssignmentStatement():
     ''' An assignment statement'''
-    def __init__(self, lhs, rhs):
+    def __init__(self, op, lhs, rhs):
+        self.op = op
         self.lhs = lhs
         self.rhs = rhs
 
     def __str__(self):
-        return "(AssignmentStatement {0} = {1})".format(self.lhs, self.rhs)
+        return "(AssignmentStatement {0} {1} {2})".format(self.op, self.lhs, self.rhs)
 
 class ReturnStatement():
     ''' A return statement'''
@@ -129,6 +130,7 @@ def parse_paren(tokens):
     tokens.pop(0) # swallow (
     expr = parse_expression(tokens)
 
+
 def parse_binary_operation_rhs(tokens):
 
     if isinstance(tokens[0], TokenOpenParen):
@@ -178,11 +180,46 @@ def parse_binary_operation_expression(tokens):
 #         next_term = parse_term(toks) //pops off some more tokens
 #         term = BinOp(op, term, next_term)
 #         next = toks.peek()
-
 #     return t1
 
 def parse_expression(tokens):
-    pass
+    #To start, just support variables and literals
+    token = tokens.pop(0)
+    if isinstance(token, TokenIdentifier):
+        node = Variable(token.value)
+    elif any(isinstance(token, x) for x in (TokenInteger,
+                                            TokenFloat,
+                                            TokenString,)):
+        node = Constant(token.value)
+    return node
+
+def parse_return(tokens):
+    keyword_return = tokens.pop(0)
+    return_value = parse_expression(tokens)
+    semi = tokens.pop(0)
+    if not isinstance(semi, TokenSemicolon):
+        raise Exception("Token ; expected.")
+
+    return ReturnStatement(return_value)
+
+def parse_assignment(tokens):
+    current_token = tokens.pop(0)
+    if isinstance(current_token, TokenKeyword):
+        lhs = tokens.pop(0)
+    elif isinstance(current_token, TokenIdentifier):
+        lhs = current_token
+
+    op = tokens.pop(0)
+    if not isinstance(op, TokenAssignmentOperator):
+        raise Exception("Assignment operator expected.")
+
+    rhs = tokens.pop(0)
+
+    semi = tokens.pop(0)
+    if not isinstance(semi, TokenSemicolon):
+        raise Exception("Token ; expected.")
+
+    return AssignmentStatement(op = op, lhs = lhs, rhs = rhs)
 
 def parse_statement(tokens):
     # Declarations
@@ -197,10 +234,17 @@ def parse_statement(tokens):
     # break;
     # continue;
     # check if first token is keyword or identifier name
-    current_token = tokens.pop(0)
-    is_keyword = isinstance(current_token, TokenKeyword)
-    is_return = is_keyword and current_token.value == "return"
-    is_identifier = isinstance(current_token, TokenIdentifier)
+    next_token = tokens[0]
+    is_keyword = isinstance(next_token, TokenKeyword)
+
+    if is_keyword:
+        if next_token.value == "return":
+            node = parse_return(tokens)
+        else:
+            current_token = tokens.pop(0)
+
+
+    is_identifier = isinstance(next_token, TokenIdentifier)
 
     # check if next token is an operator or an expression
     current_token = tokens.pop(0)
@@ -210,6 +254,7 @@ def parse_statement(tokens):
             TokenFloat,
             TokenString,
         ))
+
 
     is_assign = (
         is_identifier
@@ -224,18 +269,8 @@ def parse_statement(tokens):
         ))
     )
 
-    if (is_return and is_return_value):
-        has_semi = isinstance(tok_3, TokenSemicolon)
-        if (not has_semi):
-            raise Exception("Token ; expected")
-        else:
-            return ReturnStatement(value = tok_2.value)
-    elif (is_assign):
-        has_semi = isinstance(tok_4, TokenSemicolon)
-        if (not has_semi):
-            raise Exception("Token ; expected")
-        else:
-            return AssignmentStatement(lhs = tok_1.value, rhs = tok_3.value)
+
+    return node
 
 def parse_variable(tokens):
     if not isinstance(tokens[0], TokenIdentifier):
