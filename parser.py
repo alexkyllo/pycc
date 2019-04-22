@@ -74,11 +74,11 @@ class AssignmentStatement():
 
 class ReturnStatement():
     ''' A return statement'''
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, expression):
+        self.expression = expression
 
     def __str__(self):
-        return "(ReturnStatement {0})".format(self.value)
+        return "(ReturnStatement {0})".format(self.expression)
 
     def __repr__(self):
         return str(self)
@@ -106,6 +106,15 @@ class Function():
             self.name,
             self.arguments,
             str(self.statements))
+
+class Call():
+    ''' A function call contains a function name and a list of arguments'''
+    def __init__(self, name, arguments = []):
+        self.name = name
+        self.arguments = arguments
+
+    def __str__(self):
+        return "(Call {0} ({1}))".format(self.name, self.arguments)
 
 class Program():
     ''' A Program contains a list of functions'''
@@ -187,46 +196,90 @@ def parse_binary_operation_expression(tokens):
 #         next = toks.peek()
 #     return t1
 
-def parse_expression(tokens):
-    #To start, just support variables and literals
-    token = tokens.pop(0)
-    if isinstance(token, TokenIdentifier):
-        node = Variable(token.value)
-    elif any(isinstance(token, x) for x in (TokenInteger,
-                                            TokenFloat,
-                                            TokenString,)):
-        node = Constant(token.value)
+# <exp> ::= <term> { ("+" | "-") <term> }
+# <term> ::= <factor> { ("*" | "/") <factor> }
+# <factor> ::= "(" <exp> ")" | <unary_op> <factor> | e
+
+def parse_factor(tokens):
+    next_token = tokens[0]
+    if isinstance(next_token, TokenOpenParen):
+        accept(TokenOpenParen, tokens)
+        parse_expression(tokens)
+        expect(TokenCloseParen, tokens)
+    elif isinstance(next_token, TokenIdentifier):
+        accept(TokenIdentifier, tokens)
+    elif isinstance(next_token, TokenInteger):
+        accept(TokenInteger, tokens)
     else:
-        raise Exception("Expected Identifier or Constant.")
-    return node
+        raise Exception("Expected an expression, identifier, or literal.")
+
+
+def parse_term(tokens):
+    factor = parse_factor(tokens)
+    next_token = tokens[0]
+    while isinstance(next_token, TokenArithmeticOperator):
+
+def parse_expression(tokens):
+    term = parse_term(tokens)
+    next_token = tokens[0]
+    while isinstance(next_token, TokenArithmeticOperator):
+        op = accept(TokenArithmeticOperator, tokens)
+        next_term = parse_term(tokens)
+        term = BinaryOperationExpression(op, term, next_term)
+        next_token = tokens[0]
+
+    return term
 
 def parse_return(tokens):
-    keyword_return = tokens.pop(0)
-    return_value = parse_expression(tokens)
-    semi = tokens.pop(0)
-    if not isinstance(semi, TokenSemicolon):
-        raise Exception("Token ; expected.")
+    if accept_value(TokenKeyword, 'return', tokens):
+        expr = parse_expression(tokens)
+        expect(TokenSemicolon, tokens)
+        return ReturnStatement(expr)
 
-    return ReturnStatement(return_value)
+def accept(tok_type, tokens):
+    if isinstance(tokens[0], tok_type):
+        return tokens.pop(0)
+    else:
+        return None
+
+def accept_value(tok_type, tok_value, tokens):
+    if isinstance(tokens[0], tok_type) and tokens[0].value == tok_value:
+        return tokens.pop(0)
+    else:
+        return None
+
+def expect(tok, tokens):
+    match = accept(tok, tokens)
+    if not match:
+        raise Exception("Expected token {0}".format(tok().value))
+    return match
 
 def parse_assignment(tokens):
-    current_token = tokens.pop(0)
-    if isinstance(current_token, TokenKeyword):
-        lhs = tokens.pop(0)
-    elif isinstance(current_token, TokenIdentifier):
-        lhs = current_token
+    if accept(TokenIdentifier, tokens):
+        if accept(TokenAssignmentOperator, tokens):
+            expr = parse_expression(tokens)
+            expect(TokenSemicolon, tokens)
+            return AssignmentStatement(expr)
+    return None
 
-    op = tokens.pop(0)
-    if not isinstance(op, TokenAssignmentOperator):
-        raise Exception("Assignment operator expected.")
+def parse_initializing_assignment(tokens):
+    # handle initializing assignment statement
+    if accept(TokenKeyword, tokens):
+        if accept(TokenIdentifier, tokens):
+            if accept(TokenAssignmentOperator, tokens):
+                expr = parse_expression(tokens)
+                expect(TokenSemicolon, tokens)
+                return AssignmentStatement(expr)
 
-    rhs = tokens.pop(0)
-
-    semi = tokens.pop(0)
-    if not isinstance(semi, TokenSemicolon):
-        raise Exception("Token ; expected.")
-
-    return AssignmentStatement(op = op, lhs = lhs, rhs = rhs)
+def parse_function_call(tokens):
+    if accept(TokenOpenParen, tokens):
+        # handle function call
+        args = []
+        while not accept(TokenCloseParen, tokens):
+            args.append(parse_function_argument(tokens))
+            expect(TokenSemicolon, tokens)
+        return Call()
+>>>>>>> working on recursive descent
 
 def parse_statement(tokens):
     # Declarations
@@ -241,21 +294,12 @@ def parse_statement(tokens):
     # break;
     # continue;
     # check if first token is keyword or identifier name
-    next_token = tokens[0]
-    is_keyword = isinstance(next_token, TokenKeyword)
+    stmt = (parse_return(tokens)
+            or parse_assignment(tokens)
+            or parse_init(tokens)
+            or parse_call(tokens))
 
-    if is_keyword:
-        if next_token.value == "return":
-            node = parse_return(tokens)
-        else:
-            current_token = tokens.pop(0)
-
-    is_identifier = isinstance(next_token, TokenIdentifier)
-
-    if is_identifier:
-        node = parse_assignment(tokens)
-
-    return node
+    return stmt
 
 def parse_variable(tokens):
     if not isinstance(tokens[0], TokenIdentifier):
@@ -278,7 +322,7 @@ def parse_function_argument(tokens):
 
     return Argument(type_name, name)
 
-def parse_function(tokens):
+def parse_function_declaration(tokens):
     current_token = tokens.pop(0)
 
     if isinstance(current_token, TokenKeyword):

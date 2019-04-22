@@ -29,17 +29,47 @@ from parser import (
     Argument,
     Function,
     Program,
-    parse_assignment,
+    accept,
+    accept_value,
     parse_binary_operation_expression,
     parse_constant,
-    parse_function,
+    parse_function_declaration,
     parse_function_argument,
     parse_statement,
+    parse_assignment,
     parse_variable,
+    parse_expression,
     parse,
 )
 
 class TestParser(unittest.TestCase):
+    def test_accept(self):
+        tokens = [TokenIdentifier('a')]
+        tok = accept(TokenIdentifier, tokens)
+        self.assertEqual(TokenIdentifier, type(tok))
+        self.assertEqual('a', tok.value)
+
+    def test_accept_false(self):
+        tokens = [TokenKeyword('int')]
+        tok = accept(TokenIdentifier, tokens)
+        self.assertTrue(tok is None)
+
+    def test_accept_value(self):
+        tokens = [TokenKeyword('int')]
+        tok = accept_value(TokenKeyword, 'int', tokens)
+        self.assertEqual(TokenKeyword, type(tok))
+        self.assertEqual('int', tok.value)
+
+    def test_accept_value_false(self):
+        tokens = [TokenKeyword('int')]
+        tok = accept_value(TokenKeyword, 'return', tokens)
+        self.assertTrue(tok is None)
+
+    def test_parse_constant_expression(self):
+        tokens = [TokenInteger('1')]
+        expr = parse_expression(tokens)
+        self.assertEqual(str(expr), "(Constant 1)")
+
     def test_parse_assignment_statement(self):
         tokens = [
             TokenIdentifier('a'),
@@ -47,10 +77,8 @@ class TestParser(unittest.TestCase):
             TokenInteger('1'),
             TokenSemicolon(';'),
         ]
-
         stmt = parse_assignment(tokens)
-
-        self.assertEqual(str(stmt), "(AssignmentStatement TokenAssignmentOperator = TokenIdentifier a TokenInteger 1)")
+        self.assertEqual(str(stmt), "(AssignmentStatement a = 1)")
 
     def test_parse_constant(self):
         tokens = [
@@ -110,13 +138,13 @@ class TestParser(unittest.TestCase):
     def test_parse_binary_operation_1(self):
         tokens = [
             TokenIdentifier('a'),
-            TokenRelationalOperator('>'),
+            TokenArithmeticOperator('+'),
             TokenInteger('2'),
         ]
 
         expr = parse_binary_operation_expression(tokens)
 
-        self.assertEqual(str(expr), "(BinaryOp > (Identifier a) (Constant 2))")
+        self.assertEqual(str(expr), "(BinaryOp + (Variable a) (Constant 2))")
 
     def test_parse_binary_operation_2(self):
         tokens = [

@@ -23,11 +23,11 @@ class Token():
 
     def get_precedence(self):
         operator_precedences = {
-            '*': 3,
-            '/': 3,
-            '%': 3,
-            '+': 4,
-            '-': 4,
+            '*': 1,
+            '/': 1,
+            '%': 1,
+            '+': 2,
+            '-': 2,
         }
         return operator_precedences.get(self.value, 1)
 
@@ -47,23 +47,23 @@ class TokenKeyword(Token):
         )
 
 class TokenOpenBrace(Token):
-    def __init__(self, value=None):
+    def __init__(self, value='{'):
         super().__init__('{', value)
 
 class TokenCloseBrace(Token):
-    def __init__(self, value=None):
+    def __init__(self, value='}'):
         super().__init__('}', value)
 
 class TokenOpenParen(Token):
-    def __init__(self, value=None):
+    def __init__(self, value='\('):
         super().__init__('\(', value)
 
 class TokenCloseParen(Token):
-    def __init__(self, value=None):
+    def __init__(self, value='\)'):
         super().__init__('\)', value)
 
 class TokenSemicolon(Token):
-    def __init__(self, value=None):
+    def __init__(self, value=';'):
         super().__init__(';', value)
 
 class TokenAssignmentOperator(Token):
