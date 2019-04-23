@@ -21,16 +21,6 @@ class Token():
             self.start = None
             self.end = None
 
-    def get_precedence(self):
-        operator_precedences = {
-            '*': 1,
-            '/': 1,
-            '%': 1,
-            '+': 2,
-            '-': 2,
-        }
-        return operator_precedences.get(self.value, 1)
-
     def __str__(self):
         return "{0} {1}".format(self.__class__.__name__, self.value)
 
@@ -70,13 +60,25 @@ class TokenAssignmentOperator(Token):
     def __init__(self, value=None):
         super().__init__('[<]{2}=|[>]{2}=|[\+\-\*\/%\&\^\!\|]?[=](?!=)', value)
 
-class TokenArithmeticOperator(Token):
+class TokenAdditionOperator(Token):
     def __init__(self, value=None):
-        super().__init__('[+]{2}|[-]{2}|[\+\-\*\/%]', value)
+        super().__init__('[\+\-]', value)
 
-class TokenRelationalOperator(Token):
+class TokenMultiplicationOperator(Token):
     def __init__(self, value=None):
-        super().__init__('[=\!\>\<][=]|[<>]', value)
+        super().__init__('[\*\/%]', value)
+
+class TokenIncrementOperator(Token):
+    def __init__(self, value=None):
+        super().__init__('[+]{2}|[-]{2}', value)
+
+class TokenEqualityOperator(Token):
+    def __init__(self, value=None):
+        super().__init__('[=\!][=]', value)
+
+class TokenInequalityOperator(Token):
+    def __init__(self, value=None):
+        super().__init__('[\>\<][=]|[<>]', value)
 
 class TokenLogicalOperator(Token):
     def __init__(self, value=None):
@@ -117,8 +119,10 @@ def lex(input_string):
         TokenCloseParen,
         TokenSemicolon,
         TokenAssignmentOperator,
-        TokenArithmeticOperator,
-        TokenRelationalOperator,
+        TokenAdditionOperator,
+        TokenMultiplicationOperator,
+        TokenEqualityOperator,
+        TokenInequalityOperator,
         TokenLogicalOperator,
         TokenIdentifier,
         TokenInteger,

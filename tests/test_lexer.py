@@ -10,8 +10,11 @@ from lexer import (
     TokenCloseParen,
     TokenSemicolon,
     TokenAssignmentOperator,
-    TokenArithmeticOperator,
-    TokenRelationalOperator,
+    TokenAdditionOperator,
+    TokenMultiplicationOperator,
+    TokenIncrementOperator,
+    TokenEqualityOperator,
+    TokenInequalityOperator,
     TokenLogicalOperator,
     TokenIdentifier,
     TokenInteger,
@@ -51,8 +54,13 @@ class TestLexer(unittest.TestCase):
 
     def testLexEquality(self):
         t = lex('a==1')[1]
-        self.assertIsInstance(t, TokenRelationalOperator)
+        self.assertIsInstance(t, TokenEqualityOperator)
         self.assertEqual(t.value, '==')
+
+    def testLexUnary(self):
+        t = lex('-2')[0]
+        self.assertIsInstance(t, TokenAdditionOperator)
+        self.assertEqual(t.value, '-')
 
     def testLexSimpleMain(self):
         t = lex('int main() { int a=2; return a;}')

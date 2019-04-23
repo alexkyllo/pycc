@@ -6,8 +6,11 @@ from lexer import (
     TokenCloseParen,
     TokenSemicolon,
     TokenAssignmentOperator,
-    TokenArithmeticOperator,
-    TokenRelationalOperator,
+    TokenAdditionOperator,
+    TokenMultiplicationOperator,
+    TokenIncrementOperator,
+    TokenEqualityOperator,
+    TokenInequalityOperator,
     TokenLogicalOperator,
     TokenIdentifier,
     TokenInteger,
@@ -38,7 +41,7 @@ class UnaryOperationExpression():
         self.operand = operand
 
     def __str__(self):
-        return "(UnaryOp {0} {1})".format(self.operator, self.operand)
+        return "(UnaryOp {0} {1})".format(self.operator.value, self.operand)
 
 class BinaryOperationExpression():
     ''' An infix expression'''
@@ -48,7 +51,7 @@ class BinaryOperationExpression():
         self.rhs = rhs
 
     def __str__(self):
-        return "(BinaryOp {0} {1} {2})".format(self.operator, self.lhs, self.rhs)
+        return "(BinaryOp {0} {1} {2})".format(self.operator.value, self.lhs, self.rhs)
 
 class IfStatement():
     ''' An if statement'''
@@ -126,109 +129,86 @@ class Program():
 
 def parse_constant(tokens):
     if any(isinstance(tokens[0], x) for x in (
-            TokenIdentifier,
             TokenInteger,
             TokenFloat,
             TokenString,
     )):
-        node = Constant(tokens[0].value)
+        current_token = tokens.pop(0)
+        node = Constant(current_token.value)
     else:
         node = None
-
     return node
 
-def parse_identifier_expression(tokens):
-    return parse_variable(tokens)
-
-def parse_paren(tokens):
-    tokens.pop(0) # swallow (
-    expr = parse_expression(tokens)
-
-
-def parse_binary_operation_rhs(tokens):
-
-    if isinstance(tokens[0], TokenOpenParen):
-        exp = parse_binary_operation_expression(tokens[1:])
-        if not isinstance(tokens[4], TokenCloseParen):
-            raise Exception("Token ) expected")
-        return exp
-    elif any(isinstance(tokens[1], x) for x in (
-            TokenArithmeticOperator,
-            TokenRelationalOperator,
-            TokenLogicalOperator,
-    )):
-        return Const(tokens[1].value)
-    else:
-        raise Exception("Expression must be a constant or a ")
-
-# 1 + 2
-# (1 + 1) * 2 -> (* (+ 1 1) 2)
-# 1 + (1 * 2)
-# 1 + 1 * 2 -> (+ 1 (* 1 2))
-# 1 + (1 + (1 * 2))
-def parse_binary_operation_expression(tokens):
+def parse_variable(tokens):
     if isinstance(tokens[0], TokenIdentifier):
-        lhs = parse_identifier_expression(tokens)
-    elif any(isinstance(tokens[0], x) for x in (TokenInteger, TokenFloat)):
-        lhs = parse_number(tokens)
-    elif isinstance(tokens[0], TokenOpenParen):
-        lhs = parse_paren(tokens)
+        current_token = tokens.pop(0)
+        node = Variable(current_token.value)
     else:
-        raise Exception("Unknown token when expecting an expression.")
+        node = None
+    return node
 
-    while any(isinstance(tokens[1], x) for x in (
-            TokenArithmeticOperator,
-            TokenRelationalOperator,
-            TokenLogicalOperator,
-    )):
-        rhs = parse_term(tokens[2])
-        lhs = BinaryOperationExpression(tokens[1], lhs, rhs)
-
-    return lhs
-
-# def parse_expression(toks):
-#     term = parse_term(toks) //pops off some tokens
-#     next = toks.peek() //check the next token, but don't pop it off the list yet
-#     while next == PLUS or next == MINUS: //there's another term!
-#         op = convert_to_op(toks.next())
-#         next_term = parse_term(toks) //pops off some more tokens
-#         term = BinOp(op, term, next_term)
-#         next = toks.peek()
-#     return t1
-
-# <exp> ::= <term> { ("+" | "-") <term> }
-# <term> ::= <factor> { ("*" | "/") <factor> }
-# <factor> ::= "(" <exp> ")" | <unary_op> <factor> | e
-
-def parse_factor(tokens):
-    next_token = tokens[0]
-    if isinstance(next_token, TokenOpenParen):
-        accept(TokenOpenParen, tokens)
-        parse_expression(tokens)
+def parse_primary(tokens):
+    expr = parse_constant(tokens) or parse_variable(tokens)
+    if expr:
+        return expr
+    open_paren = accept(TokenOpenParen, tokens)
+    if open_paren:
+        expr = parse_expression(tokens)
         expect(TokenCloseParen, tokens)
-    elif isinstance(next_token, TokenIdentifier):
-        accept(TokenIdentifier, tokens)
-    elif isinstance(next_token, TokenInteger):
-        accept(TokenInteger, tokens)
-    else:
-        raise Exception("Expected an expression, identifier, or literal.")
+        return expr
 
-
-def parse_term(tokens):
-    factor = parse_factor(tokens)
+def parse_unary(tokens):
     next_token = tokens[0]
-    while isinstance(next_token, TokenArithmeticOperator):
+    if any(isinstance(tokens[0], x) for x in (
+            TokenLogicalOperator,
+            TokenAdditionOperator,
+    )):
+        operator = (accept(TokenLogicalOperator, tokens)
+                    or accept(TokenAdditionOperator, tokens))
+        rhs = parse_unary(tokens)
+        return UnaryOperationExpression(operator, rhs)
+    else:
+        return parse_primary(tokens)
+
+def parse_multiplication(tokens):
+    expr = parse_unary(tokens)
+    next_token = tokens[0]
+    while isinstance(next_token, TokenMultiplicationOperator):
+        operator = accept(TokenAdditionOperator, tokens)
+        rhs = parse_multiplication(tokens)
+        expr = BinaryOperationExpression(operator, expr, rhs)
+    return expr
+
+def parse_addition(tokens):
+    expr = parse_multiplication(tokens)
+    next_token = tokens[0]
+    while isinstance(next_token, TokenAdditionOperator):
+        operator = accept(TokenAdditionOperator, tokens)
+        rhs = parse_addition(tokens)
+        expr = BinaryOperationExpression(operator, expr, rhs)
+    return expr
+
+def parse_comparison(tokens):
+    expr = parse_addition(tokens)
+    next_token = tokens[0]
+    while isinstance(next_token, TokenInequalityOperator):
+        operator = accept(TokenInequalityOperator, tokens)
+        rhs = parse_comparison(tokens)
+        expr = BinaryOperationExpression(operator, expr, rhs)
+    return expr
+
+def parse_equality(tokens):
+    expr = parse_comparison(tokens)
+    next_token = tokens[0]
+    while isinstance(next_token, TokenEqualityOperator):
+        operator = accept(TokenEqualityOperator, tokens)
+        rhs = parse_equality(tokens)
+        expr = BinaryOperationExpression(operator, expr, rhs)
+    return expr
 
 def parse_expression(tokens):
-    term = parse_term(tokens)
-    next_token = tokens[0]
-    while isinstance(next_token, TokenArithmeticOperator):
-        op = accept(TokenArithmeticOperator, tokens)
-        next_term = parse_term(tokens)
-        term = BinaryOperationExpression(op, term, next_term)
-        next_token = tokens[0]
-
-    return term
+    expr = parse_equality(tokens)
+    return expr
 
 def parse_return(tokens):
     if accept_value(TokenKeyword, 'return', tokens):
@@ -251,15 +231,16 @@ def accept_value(tok_type, tok_value, tokens):
 def expect(tok, tokens):
     match = accept(tok, tokens)
     if not match:
-        raise Exception("Expected token {0}".format(tok().value))
+        raise Exception("Expected token {0}".format(tok.__name__))
     return match
 
 def parse_assignment(tokens):
-    if accept(TokenIdentifier, tokens):
+    lhs = accept(TokenIdentifier, tokens)
+    if lhs:
         if accept(TokenAssignmentOperator, tokens):
-            expr = parse_expression(tokens)
+            rhs = parse_expression(tokens)
             expect(TokenSemicolon, tokens)
-            return AssignmentStatement(expr)
+            return AssignmentStatement(lhs, rhs)
     return None
 
 def parse_initializing_assignment(tokens):
@@ -279,7 +260,6 @@ def parse_function_call(tokens):
             args.append(parse_function_argument(tokens))
             expect(TokenSemicolon, tokens)
         return Call()
->>>>>>> working on recursive descent
 
 def parse_statement(tokens):
     # Declarations
@@ -300,12 +280,6 @@ def parse_statement(tokens):
             or parse_call(tokens))
 
     return stmt
-
-def parse_variable(tokens):
-    if not isinstance(tokens[0], TokenIdentifier):
-        raise Exception("Expected identifier")
-    current_token = tokens.pop(0)
-    return Variable(current_token.value)
 
 def parse_function_argument(tokens):
     # does not handle * pointer yet
