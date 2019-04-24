@@ -71,7 +71,7 @@ class AssignmentStatement():
         self.rhs = rhs
 
     def __str__(self):
-        return "(AssignmentStatement {0} {1} {2})".format(self.op, self.lhs, self.rhs)
+        return "(AssignmentStatement {0} {1} {2})".format(self.op.value, self.lhs, self.rhs)
     def __repr__(self):
         return str(self)
 
@@ -128,7 +128,7 @@ class Program():
         return "(Program {0})".format(str(self.functions))
 
 def parse_constant(tokens):
-    if any(isinstance(tokens[0], x) for x in (
+    if any(isinstance(peek(tokens), x) for x in (
             TokenInteger,
             TokenFloat,
             TokenString,
@@ -140,7 +140,7 @@ def parse_constant(tokens):
     return node
 
 def parse_variable(tokens):
-    if isinstance(tokens[0], TokenIdentifier):
+    if isinstance(peek(tokens), TokenIdentifier):
         current_token = tokens.pop(0)
         node = Variable(current_token.value)
     else:
@@ -158,8 +158,7 @@ def parse_primary(tokens):
         return expr
 
 def parse_unary(tokens):
-    next_token = tokens[0]
-    if any(isinstance(tokens[0], x) for x in (
+    if any(isinstance(peek(tokens), x) for x in (
             TokenLogicalOperator,
             TokenAdditionOperator,
     )):
@@ -172,17 +171,15 @@ def parse_unary(tokens):
 
 def parse_multiplication(tokens):
     expr = parse_unary(tokens)
-    next_token = tokens[0]
-    while isinstance(next_token, TokenMultiplicationOperator):
-        operator = accept(TokenAdditionOperator, tokens)
+    while isinstance(peek(tokens), TokenMultiplicationOperator):
+        operator = accept(TokenMultiplicationOperator, tokens)
         rhs = parse_multiplication(tokens)
         expr = BinaryOperationExpression(operator, expr, rhs)
     return expr
 
 def parse_addition(tokens):
     expr = parse_multiplication(tokens)
-    next_token = tokens[0]
-    while isinstance(next_token, TokenAdditionOperator):
+    while isinstance(peek(tokens), TokenAdditionOperator):
         operator = accept(TokenAdditionOperator, tokens)
         rhs = parse_addition(tokens)
         expr = BinaryOperationExpression(operator, expr, rhs)
@@ -190,8 +187,7 @@ def parse_addition(tokens):
 
 def parse_comparison(tokens):
     expr = parse_addition(tokens)
-    next_token = tokens[0]
-    while isinstance(next_token, TokenInequalityOperator):
+    while isinstance(peek(tokens), TokenInequalityOperator):
         operator = accept(TokenInequalityOperator, tokens)
         rhs = parse_comparison(tokens)
         expr = BinaryOperationExpression(operator, expr, rhs)
@@ -199,16 +195,15 @@ def parse_comparison(tokens):
 
 def parse_equality(tokens):
     expr = parse_comparison(tokens)
-    next_token = tokens[0]
-    while isinstance(next_token, TokenEqualityOperator):
+    while isinstance(peek(tokens), TokenEqualityOperator):
         operator = accept(TokenEqualityOperator, tokens)
         rhs = parse_equality(tokens)
         expr = BinaryOperationExpression(operator, expr, rhs)
+        next_token = peek(tokens)
     return expr
 
 def parse_expression(tokens):
-    expr = parse_equality(tokens)
-    return expr
+    return parse_equality(tokens)
 
 def parse_return(tokens):
     if accept_value(TokenKeyword, 'return', tokens):
@@ -216,14 +211,20 @@ def parse_return(tokens):
         expect(TokenSemicolon, tokens)
         return ReturnStatement(expr)
 
+def peek(tokens):
+    if len(tokens) < 1:
+        return None
+    else:
+        return tokens[0]
+
 def accept(tok_type, tokens):
-    if isinstance(tokens[0], tok_type):
+    if isinstance(peek(tokens), tok_type):
         return tokens.pop(0)
     else:
         return None
 
 def accept_value(tok_type, tok_value, tokens):
-    if isinstance(tokens[0], tok_type) and tokens[0].value == tok_value:
+    if isinstance(peek(tokens), tok_type) and peek(tokens).value == tok_value:
         return tokens.pop(0)
     else:
         return None
@@ -231,16 +232,21 @@ def accept_value(tok_type, tok_value, tokens):
 def expect(tok, tokens):
     match = accept(tok, tokens)
     if not match:
-        raise Exception("Expected token {0}".format(tok.__name__))
+        tok_instance = tok()
+        if hasattr(tok_instance, 'value'):
+            raise Exception("Expected token {0}".format(tok_instance.value))
+        else:
+            raise Exception("Expected token {0}".format(tok.__name__))
     return match
 
 def parse_assignment(tokens):
-    lhs = accept(TokenIdentifier, tokens)
+    lhs = parse_variable(tokens)
     if lhs:
-        if accept(TokenAssignmentOperator, tokens):
+        if isinstance(peek(tokens), TokenAssignmentOperator):
+            op = accept(TokenAssignmentOperator, tokens)
             rhs = parse_expression(tokens)
             expect(TokenSemicolon, tokens)
-            return AssignmentStatement(lhs, rhs)
+            return AssignmentStatement(op, lhs, rhs)
     return None
 
 def parse_initializing_assignment(tokens):
@@ -289,7 +295,7 @@ def parse_function_argument(tokens):
 
     type_name = current_token
 
-    if not(isinstance(tokens[0], TokenIdentifier)):
+    if not(isinstance(peek(tokens), TokenIdentifier)):
         raise Exception("Expected identifier for argument name")
 
     name = parse_variable(tokens)
@@ -313,7 +319,7 @@ def parse_function_declaration(tokens):
     current_token = tokens.pop(0)
     args = []
     if isinstance(current_token, TokenOpenParen):
-        while not isinstance(tokens[0], TokenCloseParen):
+        while not isinstance(peek(tokens), TokenCloseParen):
             args.append(parse_function_argument(tokens))
     else:
         raise Exception("Expected token (")
@@ -322,7 +328,7 @@ def parse_function_declaration(tokens):
     statements = []
     current_token = tokens.pop(0) # should be {
     if isinstance(current_token, TokenOpenBrace):
-        while not isinstance(tokens[0], TokenCloseBrace):
+        while not isinstance(peek(tokens), TokenCloseBrace):
             statements.append(parse_statement(tokens))
     else:
         raise Exception("Expected token {")

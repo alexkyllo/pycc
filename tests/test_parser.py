@@ -95,7 +95,7 @@ class TestParser(unittest.TestCase):
             TokenSemicolon(';'),
         ]
         stmt = parse_assignment(tokens)
-        self.assertEqual(str(stmt), "(AssignmentStatement a = 1)")
+        self.assertEqual(str(stmt), "(AssignmentStatement = (Variable a) (Constant 1))")
 
     def test_parse_constant(self):
         tokens = [
