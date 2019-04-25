@@ -80,12 +80,12 @@ class TestParser(unittest.TestCase):
             TokenInteger('1'),
         ]
         expr = parse_equality(tokens)
-        self.assertEqual(str(expr), "(BinaryOp == (Constant 1) (Constant 1))")
+        self.assertEqual(str(expr), "(BinaryOp == (Constant (Int 1)) (Constant (Int 1)))")
 
     def test_parse_constant_expression(self):
         tokens = [TokenInteger('1')]
         expr = parse_expression(tokens)
-        self.assertEqual(str(expr), "(Constant 1)")
+        self.assertEqual(str(expr), "(Constant (Int 1))")
 
     def test_parse_assignment_statement(self):
         tokens = [
@@ -95,7 +95,7 @@ class TestParser(unittest.TestCase):
             TokenSemicolon(';'),
         ]
         stmt = parse_assignment(tokens)
-        self.assertEqual(str(stmt), "(AssignmentStatement = (Variable a) (Constant 1))")
+        self.assertEqual(str(stmt), "(AssignmentStatement = (Variable a) (Constant (Int 1)))")
 
     def test_parse_constant(self):
         tokens = [
@@ -104,7 +104,7 @@ class TestParser(unittest.TestCase):
 
         stmt = parse_constant(tokens)
 
-        self.assertEqual(str(stmt), "(Constant 1)")
+        self.assertEqual(str(stmt), "(Constant (Int 1))")
 
     def test_parse_variable(self):
         tokens = [
@@ -122,7 +122,7 @@ class TestParser(unittest.TestCase):
             TokenInteger('2')
         ]
         var = parse_primary(tokens)
-        self.assertEqual(str(var), "(Constant 2)")
+        self.assertEqual(str(var), "(Constant (Int 2))")
 
     def test_parse_primary_variable(self):
         tokens = [
@@ -137,8 +137,8 @@ class TestParser(unittest.TestCase):
             TokenAdditionOperator('+'),
             TokenInteger('2'),
         ]
-        expr = parse_primary(tokens)
-        self.assertEqual(str(expr), "(BinaryOp + (Integer 1) (Integer 2))")
+        expr = parse_expression(tokens)
+        self.assertEqual(str(expr), "(BinaryOp + (Constant (Int 1)) (Constant (Int 2)))")
 
     def test_parse_unary(self):
         tokens = [
@@ -146,7 +146,7 @@ class TestParser(unittest.TestCase):
             TokenInteger('2')
         ]
         expr = parse_unary(tokens)
-        self.assertEqual(str(expr), "(UnaryOp - (Integer 2)")
+        self.assertEqual(str(expr), "(UnaryOp - (Constant (Int 2)))")
 
     def test_parse_multiplication(self):
         tokens = [
@@ -155,16 +155,16 @@ class TestParser(unittest.TestCase):
             TokenInteger('2')
         ]
         expr = parse_multiplication(tokens)
-        self.assertEqual(str(expr), "(BinaryOp * (Integer 1) (Integer 2)")
+        self.assertEqual(str(expr), "(BinaryOp * (Constant (Int 1)) (Constant (Int 2)))")
 
     def test_parse_addition(self):
         tokens = [
             TokenInteger('2'),
-            TokenMultiplicationOperator('+'),
+            TokenAdditionOperator('+'),
             TokenInteger('1')
         ]
-        expr = parse_multiplication(tokens)
-        self.assertEqual(str(expr), "(BinaryOp + (Integer 2) (Integer 1)")
+        expr = parse_addition(tokens)
+        self.assertEqual(str(expr), "(BinaryOp + (Constant (Int 2)) (Constant (Int 1)))")
 
     def test_parse_function_argument(self):
         tokens = [
@@ -198,7 +198,7 @@ class TestParser(unittest.TestCase):
 
         self.assertEqual(
             str(func),
-            "(Function TokenKeyword int TokenIdentifier main ([]) [(ReturnStatement (Constant 100))])"
+            "(Function TokenKeyword int TokenIdentifier main ([]) [(ReturnStatement (Constant (Int 100)))])"
         )
 
     def test_parse_binary_operation_1(self):
@@ -210,7 +210,7 @@ class TestParser(unittest.TestCase):
 
         expr = parse_expression(tokens)
 
-        self.assertEqual(str(expr), "(BinaryOp + (Variable a) (Constant 2))")
+        self.assertEqual(str(expr), "(BinaryOp + (Variable a) (Constant (Int 2)))")
 
     def test_parse_binary_operation_2(self):
         tokens = [
@@ -226,7 +226,7 @@ class TestParser(unittest.TestCase):
 
         self.assertEqual(
             str(expr),
-            "(BinaryOp + a (BinaryOp * 1 2))"
+            "(BinaryOp + a (BinaryOp * (Constant (Int 1)) (Constant (Int 2))))"
         )
 
     def test_parse_binary_operation_2(self):
@@ -243,7 +243,7 @@ class TestParser(unittest.TestCase):
 
         self.assertEqual(
             str(expr),
-            "(BinaryOperationExpression + (BinaryOperationExpression + a 1) 2))"
+            "(BinaryOp + (Variable a) (BinaryOp + (Constant (Int 1)) (Constant (Int 2))))"
         )
 
 if __name__ == '__main__':

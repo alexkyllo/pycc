@@ -18,6 +18,14 @@ from lexer import (
     TokenString,
 )
 
+class Int():
+    '''An integer literal'''
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return "(Int {0})".format(self.value)
+
 class Constant():
     '''A constant value'''
     def __init__(self, value):
@@ -128,12 +136,14 @@ class Program():
         return "(Program {0})".format(str(self.functions))
 
 def parse_constant(tokens):
-    if any(isinstance(peek(tokens), x) for x in (
-            TokenInteger,
-            TokenFloat,
-            TokenString,
-    )):
-        current_token = tokens.pop(0)
+    if (isinstance(peek(tokens), TokenInteger)):
+        current_token = accept(TokenInteger, tokens)
+        node = Constant(Int(current_token.value))
+    elif (isinstance(peek(tokens), TokenFloat)):
+        current_token = accept(TokenFloat, tokens)
+        node = Constant(Float(current_token.value))
+    elif (isinstance(peek(tokens), TokenFloat)):
+        current_token = accept(TokenString, tokens)
         node = Constant(current_token.value)
     else:
         node = None
